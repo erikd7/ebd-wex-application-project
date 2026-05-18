@@ -1,0 +1,17 @@
+#Use this to run the DB locally with `docker compose up`
+
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: purchases
+    ports:
+      - "5432:5432"
+    volumes:
+      - purchases_db:/var/lib/postgresql/data
+
+volumes:
+  purchases_db:
