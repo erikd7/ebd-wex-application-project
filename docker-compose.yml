@@ -1,0 +1,20 @@
+include:
+  - ./db/docker-compose.yml
+
+services:
+  app:
+    image: node:24
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: >
+      sh -c "
+        npm run start
+      "
+    depends_on:
+      - postgres
