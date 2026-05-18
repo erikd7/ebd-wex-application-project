@@ -1,0 +1,18 @@
+{
+  "name": "ebd-wex-application",
+  "version": "1.0.0",
+  "description": "Erik's Wex application project",
+  "license": "ISC",
+  "author": "Erik Dietrich",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "test": "jest",
+    "test-thing": "node test-integration.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
