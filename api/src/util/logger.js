@@ -10,15 +10,23 @@ const terminalConfig = {
   options: {
     colorize: true,
   },
+  level: "debug",
 };
 
-const config = process.stdout.isTTY //https://github.com/pinojs/pino-pretty#programmatic-integration
-  ? { ...baseConfig, ...terminalConfig }
-  : baseConfig;
+const config =
+  process.env.PRETTY_LOGS || process.env.VITEST || process.stdout.isTTY //https://github.com/pinojs/pino-pretty#programmatic-integration
+    ? { ...baseConfig, ...terminalConfig }
+    : baseConfig;
 
 const log = pino(config);
 
 const httpLog = pinoHttp(config);
 
-export { httpLog };
+const loggingMiddleware = async (req, _res, next) => {
+  req.log.info("New Request");
+
+  next();
+};
+
+export { httpLog, loggingMiddleware };
 export default log;

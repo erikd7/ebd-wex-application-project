@@ -1,9 +1,20 @@
 import express from "express";
-import { httpLog } from "./util/logger.js";
+import { httpLog, loggingMiddleware } from "./util/logger.js";
+import transactionRoutes from "./routes/transaction.js";
+import { errorMiddleware } from "./util/error.js";
 
 // Express setup
 const app = express();
-app.use(httpLog);
 app.use(express.json());
+
+// Logging
+app.use(httpLog);
+app.use(loggingMiddleware);
+
+// Routes
+app.use(transactionRoutes);
+
+// Error handling
+app.use(errorMiddleware);
 
 export default app;

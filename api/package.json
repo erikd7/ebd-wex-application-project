@@ -15,8 +15,10 @@
   },
   "dependencies": {
     "express": "^5.2.1",
+    "http-status-codes": "^2.3.0",
     "pino": "^10.3.1",
-    "pino-http": "^11.0.0"
+    "pino-http": "^11.0.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
