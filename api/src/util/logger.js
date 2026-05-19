@@ -1,6 +1,5 @@
 import pino from "pino";
 import pinoHttp from "pino-http";
-import pinoPretty from "pino-pretty";
 
 // Base config
 const baseConfig = {};
