@@ -1,0 +1,139 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "WEX Purchases API",
+    "version": "1.0.0",
+    "description": "API documentation for the purchases API."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local dev server"
+    }
+  ],
+  "paths": {
+    "/transaction": {
+      "post": {
+        "summary": "Create a new transaction",
+        "description": "Creates a transaction record with a description, date, and amount.",
+        "tags": ["transaction"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransactionInput"
+              },
+              "examples": {
+                "valid": {
+                  "summary": "Valid payload",
+                  "value": {
+                    "description": "Some purchase",
+                    "date": "2026-05-20",
+                    "amount": 3.75
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Transaction created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "TransactionInput": {
+        "type": "object",
+        "required": ["description", "date", "amount"],
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "A short description of the transaction.",
+            "maxLength": 50
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Transaction date in YYYY-MM-DD format."
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "description": "Transaction amount in dollars and cents.",
+            "minimum": 0
+          }
+        }
+      },
+      "TransactionResponse": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "transaction": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "amount": {
+                "type": "number",
+                "format": "float"
+              }
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
