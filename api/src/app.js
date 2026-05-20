@@ -1,3 +1,4 @@
+import "./util/env.js";
 import express from "express";
 import { httpLog, loggingMiddleware } from "./util/logger.js";
 import transactionRoutes from "./routes/transaction.js";

@@ -1,0 +1,3 @@
+node_modules
+api/src/generated/prisma
+.env
