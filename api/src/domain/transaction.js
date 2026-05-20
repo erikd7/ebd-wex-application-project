@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { validate } from "../util/schema.js";
+import { insertTransaction } from "../db/transaction.js";
 
 const idSchema = z.string("ID must be a string");
 const DESCRIPTION_MAX_LENGTH = 50;
@@ -40,6 +41,15 @@ class Transaction {
     return new Transaction({ description, date, amount });
   }
 
+  static buildFromDb({ id, description, date, amount }) {
+    return new Transaction({
+      id,
+      description,
+      date,
+      amount: parseFloat(amount),
+    });
+  }
+
   static validateJson(input) {
     validate(transactionSchema, input);
   }
@@ -48,12 +58,21 @@ class Transaction {
     this.validateJson(input);
     return this.buildFromJson(input);
   }
+
+  async save() {
+    const result = await insertTransaction(this);
+
+    return Transaction.buildFromDb(result[0]);
+  }
+
+  formatted() {
+    return {
+      id: this.id,
+      description: this.description,
+      date: this.date,
+      amount: this.amount,
+    };
+  }
 }
 
-const storeTransaction = (transactionInput) => {
-  const transaction = Transaction.validateAndBuildFromJson(transactionInput);
-
-  return transaction;
-};
-
-export { Transaction, storeTransaction };
+export { Transaction };

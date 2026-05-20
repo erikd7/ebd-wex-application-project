@@ -1,6 +1,11 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Transaction } from "./transaction.js";
 import { StatusCodes } from "http-status-codes";
+import { insertTransaction } from "../db/transaction.js";
+
+vi.mock("../db/transaction.js", () => ({
+  insertTransaction: vi.fn(),
+}));
 
 describe("transaction domain", () => {
   describe("Transaction model", () => {
@@ -85,6 +90,19 @@ describe("transaction domain", () => {
       });
     });
 
+    describe("buildFromDb()", () => {
+      it("should build a transaction from a database object with ID and number", () => {
+        const transaction = Transaction.buildFromDb({
+          ...transactionObject,
+          amount: amount.toString(),
+        });
+
+        expect(transaction).toBeInstanceOf(Transaction);
+        expect(transaction.id).toBeDefined();
+        expect(transaction.amount).toEqual(expect.any(Number));
+      });
+    });
+
     describe("validateAndBuildFromJson()", () => {
       it("should build a transaction from a valid plain object", () => {
         expect(
@@ -94,6 +112,18 @@ describe("transaction domain", () => {
 
       it("should throw an error when an invalid object is passed", () => {
         expect(() => Transaction.validateAndBuildFromJson({})).toThrow();
+      });
+    });
+
+    describe("save()", () => {
+      it("should call insertTransaction with the transaction data", async () => {
+        insertTransaction.mockResolvedValueOnce([transactionObject]);
+
+        const result = await transaction.save();
+
+        expect(insertTransaction).toHaveBeenCalledWith(transaction);
+        expect(result).toBeInstanceOf(Transaction);
+        expect(result.id).toBe(transactionObject.id);
       });
     });
   });

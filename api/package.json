@@ -12,7 +12,7 @@
     "dev": "npm run db:migrate && node --watch src/server.js",
     "start": "node src/server.js",
     "lint": "eslint .",
-    "test": "vitest run",
+    "test": "npm run db:migrate && vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {

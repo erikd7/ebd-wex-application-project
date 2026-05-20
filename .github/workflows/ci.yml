@@ -39,6 +39,13 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    env:
+      POSTGRES_USER: ${{ vars.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ vars.POSTGRES_PASSWORD }}
+      POSTGRES_DB: ${{ vars.POSTGRES_DB }}
+      POSTGRES_HOST: ${{ vars.POSTGRES_HOST }}
+      POSTGRES_PORT: ${{ vars.POSTGRES_PORT }}
+
     defaults:
       run:
         working-directory: ${{ env.API_DIR }}
@@ -46,6 +53,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Start database
+        working-directory: .
+        run: docker compose -f db.docker-compose.yml up -d
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -59,3 +70,8 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+      - name: Stop database
+        if: always()
+        working-directory: .
+        run: docker compose down -v
