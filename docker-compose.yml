@@ -1,5 +1,5 @@
 include:
-  - ./db/docker-compose.yml
+  - ./db.docker-compose.yml
 
 services:
   app:
