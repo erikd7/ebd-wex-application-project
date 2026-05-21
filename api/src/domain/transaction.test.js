@@ -1,16 +1,17 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Transaction } from "./transaction.js";
 import { StatusCodes } from "http-status-codes";
-import { insertTransaction } from "../db/transaction.js";
+import { insertTransaction, findTransactionById } from "../db/transaction.js";
 
 vi.mock("../db/transaction.js", () => ({
   insertTransaction: vi.fn(),
+  findTransactionById: vi.fn(),
 }));
 
 describe("transaction domain", () => {
   describe("Transaction model", () => {
     let transaction;
-    const id = "abc",
+    const id = "173c98b7-8940-4d08-b97d-48e5992aec0f",
       description = "test description",
       date = "2026-05-01",
       amount = 150.12;
@@ -38,7 +39,7 @@ describe("transaction domain", () => {
       });
 
       it.each([
-        ["id", "ID must be a string"],
+        ["id", "ID must be a valid UUID"],
         ["description", "Description must be a string"],
         [
           "description",
@@ -124,6 +125,33 @@ describe("transaction domain", () => {
         expect(insertTransaction).toHaveBeenCalledWith(transaction);
         expect(result).toBeInstanceOf(Transaction);
         expect(result.id).toBe(transactionObject.id);
+      });
+    });
+
+    describe("find()", () => {
+      it("should throw error when ID is invalid", async () => {
+        await expect(Transaction.find("invalid-id")).rejects.toThrow(
+          "ID must be a valid UUID"
+        );
+      });
+
+      it("should return a transaction when found", async () => {
+        findTransactionById.mockResolvedValueOnce([transactionObject]);
+
+        const result = await Transaction.find(id);
+
+        expect(findTransactionById).toHaveBeenCalledWith(id);
+        expect(result).toBeInstanceOf(Transaction);
+        expect(result.id).toBe(transactionObject.id);
+      });
+
+      it("should return undefined when transaction is not found", async () => {
+        findTransactionById.mockResolvedValueOnce([]);
+
+        const result = await Transaction.find(id);
+
+        expect(findTransactionById).toHaveBeenCalledWith(id);
+        expect(result).toBeUndefined();
       });
     });
   });

@@ -1,18 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
-import { storeTransaction } from "./transaction";
-import { Transaction } from "../domain/transaction";
+import { storeTransaction, getTransactionInCurrency } from "./transaction";
+import { insertTransaction, findTransactionById } from "../db/transaction.js";
+import { StatusCodes } from "http-status-codes";
 
-vi.mock("../domain/transaction.js", () => ({
-  Transaction: {
-    validateAndBuildFromJson: vi.fn().mockReturnThis(),
-    save: vi.fn().mockReturnThis(),
-    formatted: vi.fn().mockReturnValue({
-      id: "abc123",
-      description: "Test transaction",
-      date: "2026-05-01",
-      amount: 100.0,
-    }),
-  },
+vi.mock("../db/transaction.js", () => ({
+  insertTransaction: vi.fn(),
+  findTransactionById: vi.fn(),
 }));
 
 describe("transaction service", () => {
@@ -24,16 +17,14 @@ describe("transaction service", () => {
         amount: 100.0,
       };
       const savedTransaction = {
-        id: "abc123",
+        id: "173c98b7-8940-4d08-b97d-48e5992aec0f",
         ...transactionInput,
       };
+      insertTransaction.mockResolvedValue([savedTransaction]);
 
       const result = await storeTransaction(transactionInput);
 
-      expect(Transaction.validateAndBuildFromJson).toHaveBeenCalledWith(
-        transactionInput
-      );
-      expect(Transaction.save).toHaveBeenCalled();
+      expect(insertTransaction).toHaveBeenCalledWith(transactionInput);
       expect(result).toEqual(savedTransaction);
     });
 
@@ -44,7 +35,7 @@ describe("transaction service", () => {
         amount: 100.0,
       };
 
-      Transaction.save.mockImplementationOnce(() => {
+      insertTransaction.mockImplementationOnce(() => {
         throw new Error("API error during save");
       });
 
@@ -53,6 +44,48 @@ describe("transaction service", () => {
       ).rejects.toMatchObject({
         message: "API error during save",
       });
+    });
+  });
+
+  describe("getTransactionInCurrency()", () => {
+    const id = "173c98b7-8940-4d08-b97d-48e5992aec0f";
+    const transaction = {
+      id,
+      description: "Test transaction",
+      date: "2026-05-01",
+      amount: 222.88,
+    };
+    //vi.spyOn(Transaction, "formatted").mockReturnValue(transaction);
+
+    it("should throw bad request error when ID is invalid", async () => {
+      findTransactionById.mockResolvedValue([transaction]);
+
+      expect(
+        async () => await getTransactionInCurrency("an invalid id")
+      ).rejects.toMatchObject({
+        message: '{"formErrors":["ID must be a valid UUID"],"fieldErrors":{}}',
+        code: StatusCodes.BAD_REQUEST,
+      });
+    });
+
+    it("should throw not found error when transaction is not found", async () => {
+      findTransactionById.mockResolvedValue([]);
+
+      expect(
+        async () => await getTransactionInCurrency(id)
+      ).rejects.toMatchObject({
+        message: `Transaction with ID ${id} not found`,
+        code: StatusCodes.NOT_FOUND,
+      });
+    });
+
+    it("should call the domain function and return the transaction", async () => {
+      findTransactionById.mockResolvedValue([transaction]);
+
+      const result = await getTransactionInCurrency(id);
+
+      expect(findTransactionById).toHaveBeenCalledWith(id);
+      expect(result).toEqual(transaction);
     });
   });
 });
