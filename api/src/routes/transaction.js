@@ -1,14 +1,29 @@
 import { Router } from "express";
-import { storeTransaction } from "../services/transaction.js";
+import {
+  storeTransaction,
+  getTransactionInCurrency,
+} from "../services/transaction.js";
 import { StatusCodes } from "http-status-codes";
 
 const router = Router();
 
+// Create a new transaction
 router.post("/transaction", async (req, res, next) => {
   try {
     const transaction = await storeTransaction(req.body);
 
     res.status(StatusCodes.CREATED).json(transaction);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Retrieve an existing transaction
+router.get("/transaction/:id", async (req, res, next) => {
+  try {
+    const transaction = await getTransactionInCurrency(req.params.id);
+
+    res.status(StatusCodes.OK).json(transaction);
   } catch (error) {
     next(error);
   }

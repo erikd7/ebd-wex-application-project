@@ -1,5 +1,5 @@
 import request from "supertest";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
 import app from "../app.js";
 import { ReasonPhrases, StatusCodes } from "http-status-codes";
 
@@ -27,9 +27,61 @@ describe("transaction routes", () => {
       };
       const response = await request(app).post("/transaction").send(body);
 
-      expect(response.status).toBe(201);
+      expect(response.status).toBe(StatusCodes.CREATED);
 
       expect(response.body).toMatchObject({ id: expect.any(String), ...body });
+    });
+  });
+
+  describe("GET /transaction", () => {
+    let realId;
+    const transactionToInsert = {
+      description: "route testing transaction GET",
+      amount: 999.99,
+      date: "2026-05-02",
+    };
+    const randomId = "173c98b7-8940-4d08-b97d-48e5992aec0f";
+
+    beforeAll(async () => {
+      const response = await request(app)
+        .post("/transaction")
+        .send(transactionToInsert);
+      if (response.status !== StatusCodes.CREATED) {
+        throw new Error(
+          `Failed to create transaction for GET /transaction route test in beforeAll: ${response.status} - ${JSON.stringify(response.body)}`
+        );
+      }
+      realId = response.body.id;
+    });
+
+    it("returns 400 when ID is invalid", async () => {
+      const response = await request(app).get(`/transaction/not-a-valid-id`);
+
+      expect(response.status).toBe(StatusCodes.BAD_REQUEST);
+      expect(response.body.error).toBe(ReasonPhrases.BAD_REQUEST);
+      expect(response.body.message).toBe(
+        '{"formErrors":["ID must be a valid UUID"],"fieldErrors":{}}'
+      );
+    });
+
+    it("returns 404 when transaction is not found", async () => {
+      const response = await request(app).get(`/transaction/${randomId}`);
+
+      expect(response.status).toBe(StatusCodes.NOT_FOUND);
+      expect(response.body.error).toBe(ReasonPhrases.NOT_FOUND);
+      expect(response.body.message).toBe(
+        `Transaction with ID ${randomId} not found`
+      );
+    });
+
+    it("returns 200 when transaction is found", async () => {
+      const response = await request(app).get(`/transaction/${realId}`);
+
+      expect(response.status).toBe(StatusCodes.OK);
+      expect(response.body).toMatchObject({
+        ...transactionToInsert,
+        id: realId,
+      });
     });
   });
 });

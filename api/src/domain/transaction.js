@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { validate } from "../util/schema.js";
-import { insertTransaction } from "../db/transaction.js";
+import { insertTransaction, findTransactionById } from "../db/transaction.js";
 
-const idSchema = z.string("ID must be a string");
+const idSchema = z
+  .string("ID must be a valid UUID")
+  .uuid("ID must be a valid UUID");
 const DESCRIPTION_MAX_LENGTH = 50;
 const descriptionSchema = z
   .string("Description must be a string")
@@ -57,6 +59,16 @@ class Transaction {
   static validateAndBuildFromJson(input) {
     this.validateJson(input);
     return this.buildFromJson(input);
+  }
+
+  static async find(id) {
+    validate(idSchema, id);
+
+    const result = await findTransactionById(id);
+
+    if (result?.length) {
+      return this.buildFromDb(result[0]);
+    }
   }
 
   async save() {
