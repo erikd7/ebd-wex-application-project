@@ -1,13 +1,15 @@
 import "./util/env.js";
 import express from "express";
 import { httpLog, loggingMiddleware } from "./util/logger.js";
+import helmet from "helmet";
 import transactionRoutes from "./routes/transaction.js";
 import { errorMiddleware } from "./util/error.js";
 import swagger from "../swagger.json" with { type: "json" };
 
 // Express setup
 const app = express();
-app.use(express.json());
+app.use(helmet());
+app.use(express.json({ limit: "100kb" }));
 
 // Logging
 app.use(httpLog);
