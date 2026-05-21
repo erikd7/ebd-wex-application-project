@@ -18,10 +18,13 @@ router.post("/transaction", async (req, res, next) => {
   }
 });
 
-// Retrieve an existing transaction
+// Retrieve an existing transaction, optionally with converted currency
 router.get("/transaction/:id", async (req, res, next) => {
   try {
-    const transaction = await getTransactionInCurrency(req.params.id);
+    const transaction = await getTransactionInCurrency(
+      req.params.id,
+      req.query.countryCurrencyDesc
+    );
 
     res.status(StatusCodes.OK).json(transaction);
   } catch (error) {

@@ -64,6 +64,18 @@ describe("transaction routes", () => {
       );
     });
 
+    it("returns 400 when currency is invalid", async () => {
+      const response = await request(app).get(
+        `/transaction/${realId}?countryCurrencyDesc=123123`
+      );
+
+      expect(response.status).toBe(StatusCodes.BAD_REQUEST);
+      expect(response.body.error).toBe(ReasonPhrases.BAD_REQUEST);
+      expect(response.body.message).toBe(
+        '{"formErrors":["countryCurrencyDesc must be in the format \'Country-Currency\', e.g. \'Canada-Dollar\'"],"fieldErrors":{}}'
+      );
+    });
+
     it("returns 404 when transaction is not found", async () => {
       const response = await request(app).get(`/transaction/${randomId}`);
 
@@ -83,5 +95,44 @@ describe("transaction routes", () => {
         id: realId,
       });
     });
+
+    it("returns a 422 when exchange rate for country-currency description is not found", async () => {
+      const countryCurrencyDesc = "Schrute-Buck";
+
+      const response = await request(app).get(
+        `/transaction/${realId}?countryCurrencyDesc=${countryCurrencyDesc}`
+      );
+
+      expect(response.status).toBe(StatusCodes.UNPROCESSABLE_ENTITY);
+      expect(response.body).toMatchObject({
+        error: "Unprocessable Entity",
+        message: `No exchange rate found for currency ${countryCurrencyDesc} within 6 months before transaction date 2026-05-02. Ensure your countryCurrencyDesc matches a Country-Currency from the Treasury Reporting Rates of Exchange API, e.g. "Canada-Dollar".`,
+      });
+    });
+
+    it.each([
+      ["Afghanistan-Afghani", 64769.35],
+      ["Canada-Dollar", 1392.99],
+      ["Mexico-Peso", 18027.82],
+    ])(
+      "returns 200 with currency converted to %s in amount %s",
+      async (countryCurrencyDesc, expectedAmount) => {
+        const response = await request(app).get(
+          `/transaction/${realId}?countryCurrencyDesc=${countryCurrencyDesc}`
+        );
+
+        expect(response.status).toBe(StatusCodes.OK);
+        expect(response.body).toMatchObject({
+          ...transactionToInsert,
+          id: realId,
+          currencies: {
+            [countryCurrencyDesc]: {
+              exchangeRate: expect.any(Number),
+              convertedAmount: expectedAmount,
+            },
+          },
+        });
+      }
+    );
   });
 });

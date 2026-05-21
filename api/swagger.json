@@ -70,6 +70,76 @@
           }
         }
       }
+    },
+    "/transaction/{id}": {
+      "get": {
+        "summary": "Retrieve a transaction",
+        "description": "Returns a saved transaction by ID. Optionally converts the amount into a specified currency.",
+        "tags": ["transaction"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Transaction UUID"
+          },
+          {
+            "name": "countryCurrencyDesc",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Optional target currency in the format Country-Currency, e.g. Canada-Dollar"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Transaction not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Valid exchange rate not found for transaction date and requested currency",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -118,6 +188,25 @@
               "amount": {
                 "type": "number",
                 "format": "float"
+              },
+              "currencies": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "exchangeRate": {
+                      "type": "number",
+                      "format": "float",
+                      "description": "The exchange rate used for conversion"
+                    },
+                    "convertedAmount": {
+                      "type": "number",
+                      "format": "float",
+                      "description": "The original USD amount converted into the requested currency"
+                    }
+                  }
+                },
+                "description": "Optional currency conversion details keyed by Country-Currency descriptor"
               }
             }
           }
