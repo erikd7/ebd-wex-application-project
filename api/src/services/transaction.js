@@ -9,8 +9,8 @@ const storeTransaction = async (transactionInput) => {
   return transaction.formatted();
 };
 
-const getTransactionInCurrency = async (id) => {
-  //Find transaction
+const getTransactionInCurrency = async (id, countryCurrencyDesc) => {
+  // Find transaction
   const transaction = await Transaction.find(id);
 
   if (!transaction) {
@@ -18,6 +18,11 @@ const getTransactionInCurrency = async (id) => {
       `Transaction with ID ${id} not found`,
       StatusCodes.NOT_FOUND
     );
+  }
+
+  // Add specified currency, if provided
+  if (countryCurrencyDesc) {
+    await transaction.enrichWithCurrency(countryCurrencyDesc);
   }
 
   return transaction.formatted();

@@ -2,10 +2,15 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Transaction } from "./transaction.js";
 import { StatusCodes } from "http-status-codes";
 import { insertTransaction, findTransactionById } from "../db/transaction.js";
+import { getMostRecentExchangeRateForCountryCurrencyDesc } from "../clients/us-treasury.js";
 
 vi.mock("../db/transaction.js", () => ({
   insertTransaction: vi.fn(),
   findTransactionById: vi.fn(),
+}));
+
+vi.mock("../clients/us-treasury.js", () => ({
+  getMostRecentExchangeRateForCountryCurrencyDesc: vi.fn(),
 }));
 
 describe("transaction domain", () => {
@@ -152,6 +157,80 @@ describe("transaction domain", () => {
 
         expect(findTransactionById).toHaveBeenCalledWith(id);
         expect(result).toBeUndefined();
+      });
+    });
+
+    describe("getCurrencyConversion()", () => {
+      it("should throw error when countryCurrencyDesc is invalid", async () => {
+        await expect(
+          transaction.getCurrencyConversion("not a country currency desc")
+        ).rejects.toThrow(
+          "countryCurrencyDesc must be in the format 'Country-Currency', e.g. 'Canada-Dollar'"
+        );
+      });
+
+      it("should return the amount multiplied by the exchange rate for the specified currency", async () => {
+        const mockedExchangeRate = 10;
+        getMostRecentExchangeRateForCountryCurrencyDesc.mockResolvedValue(
+          mockedExchangeRate
+        );
+
+        const result = await transaction.getCurrencyConversion("Canada-Dollar");
+
+        expect(
+          getMostRecentExchangeRateForCountryCurrencyDesc
+        ).toHaveBeenCalledWith(
+          "Canada-Dollar",
+          expect.any(String),
+          expect.any(String)
+        );
+        expect(result).toMatchObject({
+          exchangeRate: parseFloat(mockedExchangeRate),
+          convertedAmount:
+            Math.round(transaction.amount * mockedExchangeRate * 100) / 100,
+        });
+      });
+
+      it("should return undefined if no exchange rate is found for the specified currency", async () => {
+        getMostRecentExchangeRateForCountryCurrencyDesc.mockResolvedValue(
+          undefined
+        );
+
+        const result = await transaction.getCurrencyConversion("Canada-Dollar");
+
+        expect(result).toBeUndefined();
+      });
+    });
+
+    describe("enrichWithCurrency()", () => {
+      it("should enrich the transaction with the amount in the specified currency", async () => {
+        const mockedExchangeRate = 10;
+        getMostRecentExchangeRateForCountryCurrencyDesc.mockResolvedValue(
+          mockedExchangeRate
+        );
+
+        await transaction.enrichWithCurrency("Canada-Dollar");
+
+        expect(transaction.currencies).toEqual({
+          "Canada-Dollar": {
+            exchangeRate: parseFloat(mockedExchangeRate),
+            convertedAmount:
+              Math.round(transaction.amount * mockedExchangeRate * 100) / 100,
+          },
+        });
+      });
+
+      it("should throw an error if no exchange rate is found for the specified currency", async () => {
+        getMostRecentExchangeRateForCountryCurrencyDesc.mockResolvedValue(
+          undefined
+        );
+
+        await expect(
+          transaction.enrichWithCurrency("Canada-Dollar")
+        ).rejects.toMatchObject({
+          message: `No exchange rate found for currency Canada-Dollar within 6 months before transaction date ${transaction.date}. Ensure your countryCurrencyDesc matches a Country-Currency from the Treasury Reporting Rates of Exchange API, e.g. "Canada-Dollar".`,
+          code: StatusCodes.UNPROCESSABLE_ENTITY,
+        });
       });
     });
   });

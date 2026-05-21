@@ -52,7 +52,7 @@ describe("transaction query functions", () => {
         throw new Error("database error and maybe some schema info");
       });
 
-      expect(
+      await expect(
         async () => await insertTransaction(transaction)
       ).rejects.toMatchObject({
         message: "Failed to insert transaction",
@@ -80,7 +80,7 @@ describe("transaction query functions", () => {
         throw new Error("database error and maybe some schema info");
       });
 
-      expect(
+      await expect(
         async () => await findTransactionById(jsonTransaction.id)
       ).rejects.toMatchObject({
         message: "Failed to search for transaction",
