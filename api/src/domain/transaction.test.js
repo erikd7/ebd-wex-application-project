@@ -59,6 +59,11 @@ describe("transaction domain", () => {
         [
           "date",
           "Transaction date must be a valid date in YYYY-MM-DD format",
+          "01-01-2026",
+        ],
+        [
+          "date",
+          "Transaction date must be a valid date in YYYY-MM-DD format",
           "fake date",
         ],
         ["amount", "Transaction amount must be a number"],

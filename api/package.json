@@ -10,7 +10,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "dev": "npm run db:migrate && node --watch src/server.js",
-    "start": "node src/server.js",
+    "start": "npm run db:migrate && node src/server.js",
     "lint": "eslint .",
     "test": "npm run db:migrate && vitest run",
     "test:watch": "vitest"
